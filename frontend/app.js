@@ -2,6 +2,31 @@ const app = document.getElementById("app");
 
 let cart = [];
 let currentUser = null;
+let currentSlide = 0;
+
+/* ========================= */
+/* NAVBAR EVENT LISTENERS */
+/* ========================= */
+
+const navButtons = document.querySelectorAll(".nav-btn");
+
+navButtons.forEach(button => {
+    button.addEventListener("click", function () {
+
+        // Remove active from all
+        navButtons.forEach(btn => btn.classList.remove("active"));
+
+        // Add active to clicked
+        this.classList.add("active");
+
+        const page = this.dataset.page;
+
+        if (page === "home") showHome();
+        if (page === "shop") showShop();
+        if (page === "locations") showLocations();
+        if (page === "login") showLogin();
+    });
+});
 
 /* ========================= */
 /* HOME PAGE */
@@ -44,6 +69,89 @@ function showHome() {
 }
 
 /* ========================= */
+/* OUR OBJECTIVE PAGE */
+/* ========================= */
+
+function showObjective() {
+    app.innerHTML = `
+        <div class="carousel-container">
+            <h1 class="carousel-title">We Brew Traditional Coffee</h1>
+            
+            <div class="carousel-section">
+                <button class="carousel-btn prev" onclick="prevSlide()">❮</button>
+                
+                <div class="carousel-wrapper" id="carouselWrapper">
+                    <div class="carousel-slide center">
+                        <img src="https://images.unsplash.com/photo-1495521821757-a1efb6729352?auto=format&fit=crop&w=800&q=80" alt="Coffee shop storefront">
+                    </div>
+                    <div class="carousel-slide">
+                        <img src="https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=800&q=80" alt="Coffee brewing process">
+                    </div>
+                    <div class="carousel-slide">
+                        <img src="https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=800&q=80" alt="Barista team">
+                    </div>
+                    <div class="carousel-slide">
+                        <img src="https://images.unsplash.com/photo-1470337458703-46ad1756a187?auto=format&fit=crop&w=800&q=80" alt="Coffee beans and cup">
+                    </div>
+                    <div class="carousel-slide">
+                        <img src="https://images.unsplash.com/photo-1459257868276-5e65389e2722?auto=format&fit=crop&w=800&q=80" alt="Latte art pour">
+                    </div>
+                </div>
+                
+                <button class="carousel-btn next" onclick="nextSlide()">❯</button>
+            </div>
+
+            <div class="carousel-description">
+                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehen</p>
+            </div>
+        </div>
+    `;
+    currentSlide = 0;
+    updateCarouselPosition();
+}
+
+/* ========================= */
+/* CAROUSEL FUNCTIONS */
+/* ========================= */
+
+function updateCarouselPosition() {
+    const wrapper = document.getElementById('carouselWrapper');
+    const slides = document.querySelectorAll('.carousel-slide');
+    
+    if (wrapper && slides.length > 0) {
+        const style = getComputedStyle(wrapper);
+        const gap = parseFloat(style.columnGap || style.gap || 0);
+
+        const targetSlide = slides[currentSlide];
+        const slideWidth = targetSlide.offsetWidth;
+        const targetLeft = targetSlide.offsetLeft;
+
+        // Center the active slide while keeping neighbors visible
+        const desired = targetLeft - (wrapper.clientWidth - slideWidth) / 2;
+        const maxScroll = wrapper.scrollWidth - wrapper.clientWidth;
+        const scrollLeft = Math.max(0, Math.min(desired, maxScroll));
+
+        wrapper.scrollTo({ left: scrollLeft, behavior: 'smooth' });
+
+        slides.forEach((slide, index) => {
+            slide.classList.toggle('center', index === currentSlide);
+        });
+    }
+}
+
+function nextSlide() {
+    const slides = document.querySelectorAll('.carousel-slide');
+    currentSlide = (currentSlide + 1) % slides.length;
+    updateCarouselPosition();
+}
+
+function prevSlide() {
+    const slides = document.querySelectorAll('.carousel-slide');
+    currentSlide = (currentSlide - 1 + slides.length) % slides.length;
+    updateCarouselPosition();
+}
+
+/* ========================= */
 /* SHOP */
 /* ========================= */
 
@@ -81,13 +189,13 @@ function showCart() {
     let total = 0;
 
     let itemsHTML = cart.map(item => {
-    total += item.price;
-    return `
-        <div class="cart-item">
-            <span>${item.name}</span>
-            <span>£${item.price.toFixed(2)}</span>
-        </div>
-    `;
+        total += item.price;
+        return `
+            <div class="cart-item">
+                <span>${item.name}</span>
+                <span>£${item.price.toFixed(2)}</span>
+            </div>
+        `;
     }).join("");
 
     app.innerHTML = `
@@ -121,6 +229,10 @@ function completePayment() {
     cart = [];
     alert("Payment Successful!");
     showHome();
+
+    // Reset active navbar to Home
+    navButtons.forEach(btn => btn.classList.remove("active"));
+    document.querySelector('[data-page="home"]').classList.add("active");
 }
 
 /* ========================= */
@@ -130,9 +242,7 @@ function completePayment() {
 function showLogin() {
     app.innerHTML = `
         <section class="auth-section">
-
             <div class="auth-card">
-
                 <h1 class="auth-title">LOGIN</h1>
 
                 <div class="auth-error" id="loginError" style="display:none;">
@@ -140,7 +250,6 @@ function showLogin() {
                 </div>
 
                 <form class="auth-form" onsubmit="handleLogin(event)">
-
                     <label class="auth-label">Email</label>
                     <input class="auth-input" type="email" id="loginEmail" required>
 
@@ -152,7 +261,6 @@ function showLogin() {
                     <button type="submit" class="auth-button">
                         SUBMIT
                     </button>
-
                 </form>
 
                 <div class="auth-footer">
@@ -160,9 +268,7 @@ function showLogin() {
                         Register Here
                     </a>
                 </div>
-
             </div>
-
         </section>
     `;
 }
@@ -177,6 +283,10 @@ function handleLogin(event) {
         currentUser = email;
         alert("Login successful!");
         showHome();
+
+        navButtons.forEach(btn => btn.classList.remove("active"));
+        document.querySelector('[data-page="home"]').classList.add("active");
+
     } else {
         document.getElementById("loginError").style.display = "block";
     }
@@ -189,13 +299,10 @@ function handleLogin(event) {
 function showRegister() {
     app.innerHTML = `
         <section class="auth-section">
-
             <div class="auth-card">
-
                 <h1 class="auth-title">REGISTER</h1>
 
                 <form class="auth-form" onsubmit="handleRegister(event)">
-
                     <label class="auth-label">Email</label>
                     <input class="auth-input" type="email" required>
 
@@ -211,7 +318,6 @@ function showRegister() {
                     <button type="submit" class="auth-button">
                         SUBMIT
                     </button>
-
                 </form>
 
                 <div class="auth-footer">
@@ -219,9 +325,7 @@ function showRegister() {
                         Back to Login
                     </a>
                 </div>
-
             </div>
-
         </section>
     `;
 }
@@ -264,21 +368,17 @@ function showLocations() {
 }
 
 /* ========================= */
-/* COOKIE NOTICE - Added by Raees */
+/* COOKIE NOTICE */
 /* ========================= */
-/* Checks if user has accepted cookies using localStorage */
-/* Shows banner on first visit, hides after user clicks Accept */
 
 function checkCookieConsent() {
     const cookieNotice = document.getElementById('cookieNotice');
     const acceptBtn = document.getElementById('acceptCookies');
-    
-    // Check if user has already accepted cookies
+
     if (!localStorage.getItem('cookiesAccepted')) {
         cookieNotice.classList.add('show');
     }
-    
-    // Handle accept button click
+
     acceptBtn.addEventListener('click', function() {
         localStorage.setItem('cookiesAccepted', 'true');
         cookieNotice.classList.remove('show');
@@ -286,8 +386,9 @@ function checkCookieConsent() {
 }
 
 /* ========================= */
-/* LOAD HOME BY DEFAULT */
+/* INITIAL LOAD */
 /* ========================= */
 
 showHome();
+document.querySelector('[data-page="home"]').classList.add("active");
 checkCookieConsent();
