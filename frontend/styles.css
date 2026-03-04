@@ -140,7 +140,7 @@ body {
 .title {
     font-family: 'Black Ops One', sans-serif;
     font-size: clamp(3rem, 7vw, 6rem);
-    color: #000;
+    color: #ffffff;
     letter-spacing: 3px;
     position: relative;
     z-index: 2;
@@ -152,7 +152,7 @@ body {
     left: 10%;
     right: 10%;
     bottom: -15px;
-    border-bottom: 5px solid #000;
+    border-bottom: 5px solid #fff;
 }
 
 /* ========================= */
