@@ -81,8 +81,13 @@ function showCart() {
     let total = 0;
 
     let itemsHTML = cart.map(item => {
-        total += item.price;
-        return `<p>${item.name} - £${item.price.toFixed(2)}</p>`;
+    total += item.price;
+    return `
+        <div class="cart-item">
+            <span>${item.name}</span>
+            <span>£${item.price.toFixed(2)}</span>
+        </div>
+    `;
     }).join("");
 
     app.innerHTML = `
