@@ -5,6 +5,30 @@ let currentUser = null;
 let currentSlide = 0;
 
 /* ========================= */
+/* NAVBAR EVENT LISTENERS */
+/* ========================= */
+
+const navButtons = document.querySelectorAll(".nav-btn");
+
+navButtons.forEach(button => {
+    button.addEventListener("click", function () {
+
+        // Remove active from all
+        navButtons.forEach(btn => btn.classList.remove("active"));
+
+        // Add active to clicked
+        this.classList.add("active");
+
+        const page = this.dataset.page;
+
+        if (page === "home") showHome();
+        if (page === "shop") showShop();
+        if (page === "locations") showLocations();
+        if (page === "login") showLogin();
+    });
+});
+
+/* ========================= */
 /* HOME PAGE */
 /* ========================= */
 
@@ -165,13 +189,13 @@ function showCart() {
     let total = 0;
 
     let itemsHTML = cart.map(item => {
-    total += item.price;
-    return `
-        <div class="cart-item">
-            <span>${item.name}</span>
-            <span>£${item.price.toFixed(2)}</span>
-        </div>
-    `;
+        total += item.price;
+        return `
+            <div class="cart-item">
+                <span>${item.name}</span>
+                <span>£${item.price.toFixed(2)}</span>
+            </div>
+        `;
     }).join("");
 
     app.innerHTML = `
@@ -205,6 +229,10 @@ function completePayment() {
     cart = [];
     alert("Payment Successful!");
     showHome();
+
+    // Reset active navbar to Home
+    navButtons.forEach(btn => btn.classList.remove("active"));
+    document.querySelector('[data-page="home"]').classList.add("active");
 }
 
 /* ========================= */
@@ -214,9 +242,7 @@ function completePayment() {
 function showLogin() {
     app.innerHTML = `
         <section class="auth-section">
-
             <div class="auth-card">
-
                 <h1 class="auth-title">LOGIN</h1>
 
                 <div class="auth-error" id="loginError" style="display:none;">
@@ -224,7 +250,6 @@ function showLogin() {
                 </div>
 
                 <form class="auth-form" onsubmit="handleLogin(event)">
-
                     <label class="auth-label">Email</label>
                     <input class="auth-input" type="email" id="loginEmail" required>
 
@@ -236,7 +261,6 @@ function showLogin() {
                     <button type="submit" class="auth-button">
                         SUBMIT
                     </button>
-
                 </form>
 
                 <div class="auth-footer">
@@ -244,9 +268,7 @@ function showLogin() {
                         Register Here
                     </a>
                 </div>
-
             </div>
-
         </section>
     `;
 }
@@ -261,6 +283,10 @@ function handleLogin(event) {
         currentUser = email;
         alert("Login successful!");
         showHome();
+
+        navButtons.forEach(btn => btn.classList.remove("active"));
+        document.querySelector('[data-page="home"]').classList.add("active");
+
     } else {
         document.getElementById("loginError").style.display = "block";
     }
@@ -273,13 +299,10 @@ function handleLogin(event) {
 function showRegister() {
     app.innerHTML = `
         <section class="auth-section">
-
             <div class="auth-card">
-
                 <h1 class="auth-title">REGISTER</h1>
 
                 <form class="auth-form" onsubmit="handleRegister(event)">
-
                     <label class="auth-label">Email</label>
                     <input class="auth-input" type="email" required>
 
@@ -295,7 +318,6 @@ function showRegister() {
                     <button type="submit" class="auth-button">
                         SUBMIT
                     </button>
-
                 </form>
 
                 <div class="auth-footer">
@@ -303,9 +325,7 @@ function showRegister() {
                         Back to Login
                     </a>
                 </div>
-
             </div>
-
         </section>
     `;
 }
@@ -348,21 +368,17 @@ function showLocations() {
 }
 
 /* ========================= */
-/* COOKIE NOTICE - Added by Raees */
+/* COOKIE NOTICE */
 /* ========================= */
-/* Checks if user has accepted cookies using localStorage */
-/* Shows banner on first visit, hides after user clicks Accept */
 
 function checkCookieConsent() {
     const cookieNotice = document.getElementById('cookieNotice');
     const acceptBtn = document.getElementById('acceptCookies');
-    
-    // Check if user has already accepted cookies
+
     if (!localStorage.getItem('cookiesAccepted')) {
         cookieNotice.classList.add('show');
     }
-    
-    // Handle accept button click
+
     acceptBtn.addEventListener('click', function() {
         localStorage.setItem('cookiesAccepted', 'true');
         cookieNotice.classList.remove('show');
@@ -370,8 +386,9 @@ function checkCookieConsent() {
 }
 
 /* ========================= */
-/* LOAD HOME BY DEFAULT */
+/* INITIAL LOAD */
 /* ========================= */
 
 showHome();
+document.querySelector('[data-page="home"]').classList.add("active");
 checkCookieConsent();
