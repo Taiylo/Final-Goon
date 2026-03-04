@@ -1,62 +1,65 @@
-from datetime import datetime
 from flask import Flask, jsonify, request, session, send_from_directory, abort
-
 from models import db, User, Product, Order, OrderItem
 from security import hash_password, verify_password, ensure_csrf, require_csrf
 from seed import seed_products
 
 
-# =========================
+# =====================================
 # APP FACTORY
-# =========================
+# =====================================
 
 def create_app():
     app = Flask(__name__, static_folder="static", static_url_path="/static")
 
-    app.config["SECRET_KEY"] = "dev"  # CHANGE BEFORE DEPLOYMENT
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///coffee_shop.db"
-    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    # ----------------------------
+    # CONFIG
+    # ----------------------------
+    app.config.update(
+        SECRET_KEY="dev",  # CHANGE BEFORE DEPLOYMENT
+        SQLALCHEMY_DATABASE_URI="sqlite:///coffee_shop.db",
+        SQLALCHEMY_TRACK_MODIFICATIONS=False,
+    )
 
     db.init_app(app)
 
     with app.app_context():
         db.create_all()
-        seed_products()   # auto-seed products on first run
+        seed_products()
 
-    # =========================
+    # =====================================
     # HELPERS
-    # =========================
+    # =====================================
 
     def require_login():
         uid = session.get("user_id")
         if not uid:
-            abort(401, description="Not logged in")
+            abort(401, description="You must be logged in")
         return uid
 
-    def parse_int(value, field_name):
+    def parse_positive_int(value, field):
         try:
             v = int(value)
         except (TypeError, ValueError):
-            abort(400, description=f"{field_name} must be an integer")
+            abort(400, description=f"{field} must be an integer")
         if v <= 0:
-            abort(400, description=f"{field_name} must be greater than 0")
+            abort(400, description=f"{field} must be greater than 0")
         return v
 
-    # =========================
+    # =====================================
     # CSRF
-    # =========================
+    # =====================================
 
     @app.before_request
-    def _csrf_bootstrap():
+    def csrf_bootstrap():
         ensure_csrf()
 
     @app.get("/api/csrf")
     def get_csrf():
         return jsonify({"csrfToken": session.get("csrf_token")})
 
-    # =========================
+    # =====================================
     # AUTH
-    # =========================
+    # =====================================
 
     @app.post("/api/register")
     def register():
@@ -145,13 +148,13 @@ def create_app():
             }
         })
 
-    # =========================
+    # =====================================
     # PRODUCTS
-    # =========================
+    # =====================================
 
     @app.get("/api/products")
     def list_products():
-        products = Product.query.order_by(Product.created_at.desc()).all()
+        products = Product.query.all()
 
         return jsonify({
             "products": [
@@ -166,95 +169,77 @@ def create_app():
             ]
         })
 
-    # =========================
-# CHECKOUT (LOGIN REQUIRED)
-# =========================
+    # =====================================
+    # CHECKOUT (LOGIN REQUIRED)
+    # =====================================
 
-@app.post("/api/checkout")
-def checkout():
-    require_csrf()
+    @app.post("/api/checkout")
+    def checkout():
+        require_csrf()
+        uid = require_login()
 
-    # 🔐 Must be logged in before entering payment details
-    uid = require_login()
+        data = request.get_json(silent=True) or {}
 
-    data = request.get_json(silent=True) or {}
+        # ---- Validate card details ----
+        card_number = (data.get("cardNumber") or "").strip()
+        expiry = (data.get("expiry") or "").strip()
+        cvc = (data.get("cvc") or "").strip()
 
-    # -------------------------
-    # Validate Card Details
-    # -------------------------
-    card_number = (data.get("cardNumber") or "").strip()
-    expiry = (data.get("expiry") or "").strip()
-    cvc = (data.get("cvc") or "").strip()
+        if not card_number.isdigit() or len(card_number) != 16:
+            abort(400, description="Card number must be 16 digits")
 
-    if not card_number.isdigit() or len(card_number) != 16:
-        abort(400, description="Card number must be 16 digits")
+        if not cvc.isdigit() or len(cvc) not in (3, 4):
+            abort(400, description="Invalid CVC")
 
-    if not cvc.isdigit() or len(cvc) not in (3, 4):
-        abort(400, description="Invalid CVC")
+        if not expiry or len(expiry) != 5 or expiry[2] != "/":
+            abort(400, description="Expiry must be in MM/YY format")
 
-    if not expiry or len(expiry) != 5 or expiry[2] != "/":
-        abort(400, description="Expiry must be in MM/YY format")
+        # ---- Validate cart ----
+        items = data.get("items")
+        if not isinstance(items, list) or not items:
+            abort(400, description="Cart is empty")
 
-    # -------------------------
-    # Validate Cart
-    # -------------------------
-    items = data.get("items")
-    if not isinstance(items, list) or not items:
-        abort(400, description="Cart is empty")
+        order = Order(user_id=uid, total_price_pence=0, status="paid")
+        db.session.add(order)
+        db.session.flush()
 
-    order = Order(
-        user_id=uid,
-        total_price_pence=0,
-        status="paid"
-    )
+        total = 0
 
-    db.session.add(order)
-    db.session.flush()
+        for item in items:
+            product_id = item.get("productId")
+            quantity = parse_positive_int(item.get("quantity"), "quantity")
 
-    total = 0
+            product = Product.query.get(product_id)
+            if not product:
+                abort(404, description="Product not found")
 
-    for item in items:
-        product_id = item.get("productId")
+            if product.stock < quantity:
+                abort(409, description=f"Not enough stock for {product.name}")
 
-        try:
-            quantity = int(item.get("quantity"))
-        except (TypeError, ValueError):
-            abort(400, description="Invalid quantity")
+            product.stock -= quantity
 
-        if quantity <= 0:
-            abort(400, description="Quantity must be greater than 0")
+            line_total = product.price_pence * quantity
+            total += line_total
 
-        product = Product.query.get(product_id)
-        if not product:
-            abort(404, description="Product not found")
+            db.session.add(OrderItem(
+                order_id=order.id,
+                product_id=product.id,
+                quantity=quantity,
+                price_pence=product.price_pence
+            ))
 
-        if product.stock < quantity:
-            abort(409, description=f"Not enough stock for {product.name}")
+        order.total_price_pence = total
+        db.session.commit()
 
-        product.stock -= quantity
+        return jsonify({
+            "ok": True,
+            "orderId": order.id,
+            "totalPricePence": total
+        })
 
-        line_total = product.price_pence * quantity
-        total += line_total
-
-        db.session.add(OrderItem(
-            order_id=order.id,
-            product_id=product.id,
-            quantity=quantity,
-            price_pence=product.price_pence
-        ))
-
-    order.total_price_pence = total
-    db.session.commit()
-
-    return jsonify({
-        "ok": True,
-        "orderId": order.id,
-        "totalPricePence": total
-    })
-
-    # =========================
-    # MY ORDERS
-    # =========================
+    # =====================================
+    # MY ORDERS (Purchase History)
+    # =====================================
 
     @app.get("/api/orders")
     def my_orders():
@@ -274,7 +259,6 @@ def checkout():
                     "createdAt": o.created_at.isoformat(),
                     "items": [
                         {
-                            "productId": item.product_id,
                             "productName": item.product.name,
                             "quantity": item.quantity,
                             "pricePence": item.price_pence
@@ -286,9 +270,9 @@ def checkout():
             ]
         })
 
-    # =========================
+    # =====================================
     # FRONTEND
-    # =========================
+    # =====================================
 
     @app.get("/")
     def root():
@@ -298,13 +282,12 @@ def checkout():
     def static_proxy(path):
         return send_from_directory("../frontend", path)
 
-    # =========================
+    # =====================================
     # ERROR HANDLING
-    # =========================
+    # =====================================
 
     @app.errorhandler(400)
     @app.errorhandler(401)
-    @app.errorhandler(403)
     @app.errorhandler(404)
     @app.errorhandler(409)
     def api_errors(err):
