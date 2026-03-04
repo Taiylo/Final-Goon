@@ -2,6 +2,7 @@ const app = document.getElementById("app");
 
 let cart = [];
 let currentUser = null;
+let currentSlide = 0;
 
 /* ========================= */
 /* HOME PAGE */
@@ -41,6 +42,89 @@ function showHome() {
             </section>
         </main>
     `;
+}
+
+/* ========================= */
+/* OUR OBJECTIVE PAGE */
+/* ========================= */
+
+function showObjective() {
+    app.innerHTML = `
+        <div class="carousel-container">
+            <h1 class="carousel-title">We Brew Traditional Coffee</h1>
+            
+            <div class="carousel-section">
+                <button class="carousel-btn prev" onclick="prevSlide()">❮</button>
+                
+                <div class="carousel-wrapper" id="carouselWrapper">
+                    <div class="carousel-slide center">
+                        <img src="https://images.unsplash.com/photo-1495521821757-a1efb6729352?auto=format&fit=crop&w=800&q=80" alt="Coffee shop storefront">
+                    </div>
+                    <div class="carousel-slide">
+                        <img src="https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=800&q=80" alt="Coffee brewing process">
+                    </div>
+                    <div class="carousel-slide">
+                        <img src="https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=800&q=80" alt="Barista team">
+                    </div>
+                    <div class="carousel-slide">
+                        <img src="https://images.unsplash.com/photo-1470337458703-46ad1756a187?auto=format&fit=crop&w=800&q=80" alt="Coffee beans and cup">
+                    </div>
+                    <div class="carousel-slide">
+                        <img src="https://images.unsplash.com/photo-1459257868276-5e65389e2722?auto=format&fit=crop&w=800&q=80" alt="Latte art pour">
+                    </div>
+                </div>
+                
+                <button class="carousel-btn next" onclick="nextSlide()">❯</button>
+            </div>
+
+            <div class="carousel-description">
+                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehen</p>
+            </div>
+        </div>
+    `;
+    currentSlide = 0;
+    updateCarouselPosition();
+}
+
+/* ========================= */
+/* CAROUSEL FUNCTIONS */
+/* ========================= */
+
+function updateCarouselPosition() {
+    const wrapper = document.getElementById('carouselWrapper');
+    const slides = document.querySelectorAll('.carousel-slide');
+    
+    if (wrapper && slides.length > 0) {
+        const style = getComputedStyle(wrapper);
+        const gap = parseFloat(style.columnGap || style.gap || 0);
+
+        const targetSlide = slides[currentSlide];
+        const slideWidth = targetSlide.offsetWidth;
+        const targetLeft = targetSlide.offsetLeft;
+
+        // Center the active slide while keeping neighbors visible
+        const desired = targetLeft - (wrapper.clientWidth - slideWidth) / 2;
+        const maxScroll = wrapper.scrollWidth - wrapper.clientWidth;
+        const scrollLeft = Math.max(0, Math.min(desired, maxScroll));
+
+        wrapper.scrollTo({ left: scrollLeft, behavior: 'smooth' });
+
+        slides.forEach((slide, index) => {
+            slide.classList.toggle('center', index === currentSlide);
+        });
+    }
+}
+
+function nextSlide() {
+    const slides = document.querySelectorAll('.carousel-slide');
+    currentSlide = (currentSlide + 1) % slides.length;
+    updateCarouselPosition();
+}
+
+function prevSlide() {
+    const slides = document.querySelectorAll('.carousel-slide');
+    currentSlide = (currentSlide - 1 + slides.length) % slides.length;
+    updateCarouselPosition();
 }
 
 /* ========================= */
