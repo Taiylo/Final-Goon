@@ -1,6 +1,7 @@
 const app = document.getElementById("app");
 
 let cart = [];
+let currentUser = null;
 
 /* ========================= */
 /* HOME PAGE */
@@ -123,29 +124,107 @@ function completePayment() {
 
 function showLogin() {
     app.innerHTML = `
-        <div class="card">
-            <h2>Login</h2>
-            <input placeholder="Email">
-            <input type="password" placeholder="Password">
-            <button class="green-btn">Submit</button>
-            <p class="auth-switch">
-                <a href="#" onclick="showRegister()">Register Here</a>
-            </p>
-        </div>
+        <section class="auth-section">
+
+            <div class="auth-card">
+
+                <h1 class="auth-title">LOGIN</h1>
+
+                <div class="auth-error" id="loginError" style="display:none;">
+                    Invalid email or password.
+                </div>
+
+                <form class="auth-form" onsubmit="handleLogin(event)">
+
+                    <label class="auth-label">Email</label>
+                    <input class="auth-input" type="email" id="loginEmail" required>
+
+                    <label class="auth-label">Password</label>
+                    <input class="auth-input" type="password" id="loginPassword" required>
+
+                    <a href="#" class="auth-forgot">Forgot Password?</a>
+
+                    <button type="submit" class="auth-button">
+                        SUBMIT
+                    </button>
+
+                </form>
+
+                <div class="auth-footer">
+                    <a href="#" class="auth-register" onclick="showRegister()">
+                        Register Here
+                    </a>
+                </div>
+
+            </div>
+
+        </section>
     `;
 }
 
+function handleLogin(event) {
+    event.preventDefault();
+
+    const email = document.getElementById("loginEmail").value.trim();
+    const password = document.getElementById("loginPassword").value.trim();
+
+    if (email === "admin@example.com" && password === "password") {
+        currentUser = email;
+        alert("Login successful!");
+        showHome();
+    } else {
+        document.getElementById("loginError").style.display = "block";
+    }
+}
+
+/* ========================= */
+/* REGISTER */
+/* ========================= */
+
 function showRegister() {
     app.innerHTML = `
-        <div class="card">
-            <h2>Register</h2>
-            <input placeholder="Email">
-            <input placeholder="Username">
-            <input type="password" placeholder="Password">
-            <input type="password" placeholder="Confirm Password">
-            <button class="green-btn">Submit</button>
-        </div>
+        <section class="auth-section">
+
+            <div class="auth-card">
+
+                <h1 class="auth-title">REGISTER</h1>
+
+                <form class="auth-form" onsubmit="handleRegister(event)">
+
+                    <label class="auth-label">Email</label>
+                    <input class="auth-input" type="email" required>
+
+                    <label class="auth-label">Username</label>
+                    <input class="auth-input" required>
+
+                    <label class="auth-label">Password</label>
+                    <input class="auth-input" type="password" required>
+
+                    <label class="auth-label">Confirm Password</label>
+                    <input class="auth-input" type="password" required>
+
+                    <button type="submit" class="auth-button">
+                        SUBMIT
+                    </button>
+
+                </form>
+
+                <div class="auth-footer">
+                    <a href="#" class="auth-register" onclick="showLogin()">
+                        Back to Login
+                    </a>
+                </div>
+
+            </div>
+
+        </section>
     `;
+}
+
+function handleRegister(event) {
+    event.preventDefault();
+    alert("Registration successful!");
+    showLogin();
 }
 
 /* ========================= */
