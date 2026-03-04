@@ -1,5 +1,13 @@
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r ../requirements.txt
+cd C:\GitHub\Final-Goon
+
+git pull
+
+if (!(Test-Path ".venv")) {
+    .\Python312\python.exe -m venv .venv
+}
+
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+
 cd backend
-python app.py
+
+..\.venv\Scripts\python.exe app.py
