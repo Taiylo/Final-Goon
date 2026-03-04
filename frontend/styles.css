@@ -202,6 +202,7 @@ body {
     }
 }
 
+
 /* ============================= */
 /* AUTH PAGE */
 /* ============================= */
@@ -307,4 +308,82 @@ body {
 
 .auth-register:hover {
     text-decoration: underline;
+=======
+/* ========================= */
+/* COOKIE NOTICE - Added by Raees */
+/* ========================= */
+/* Fixed banner at bottom of page with slide-up animation */
+/* Hidden by default, shown via JavaScript if cookies not accepted */
+
+.cookie-notice {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.95);
+    padding: 20px;
+    box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+    display: none;
+    animation: slideUp 0.5s ease-out;
+}
+
+.cookie-notice.show {
+    display: block;
+}
+
+.cookie-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.cookie-content p {
+    margin: 0;
+    font-size: 1rem;
+    flex: 1;
+    min-width: 250px;
+}
+
+.cookie-btn {
+    background: #d65a35;
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    font-family: 'Teko', sans-serif;
+    font-size: 1.1rem;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background 0.3s ease;
+    white-space: nowrap;
+}
+
+.cookie-btn:hover {
+    background: #a3362c;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@media (max-width: 768px) {
+    .cookie-content {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .cookie-content p {
+        font-size: 0.9rem;
+    }
 }
