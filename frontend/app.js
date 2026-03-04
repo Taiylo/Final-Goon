@@ -180,7 +180,30 @@ function showLocations() {
 }
 
 /* ========================= */
+/* COOKIE NOTICE - Added by Raees */
+/* ========================= */
+/* Checks if user has accepted cookies using localStorage */
+/* Shows banner on first visit, hides after user clicks Accept */
+
+function checkCookieConsent() {
+    const cookieNotice = document.getElementById('cookieNotice');
+    const acceptBtn = document.getElementById('acceptCookies');
+    
+    // Check if user has already accepted cookies
+    if (!localStorage.getItem('cookiesAccepted')) {
+        cookieNotice.classList.add('show');
+    }
+    
+    // Handle accept button click
+    acceptBtn.addEventListener('click', function() {
+        localStorage.setItem('cookiesAccepted', 'true');
+        cookieNotice.classList.remove('show');
+    });
+}
+
+/* ========================= */
 /* LOAD HOME BY DEFAULT */
 /* ========================= */
 
 showHome();
+checkCookieConsent();
