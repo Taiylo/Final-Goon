@@ -4,6 +4,37 @@ let cart = [];
 let currentUser = null;
 let currentSlide = 0;
 
+let csrfToken = null;
+
+async function api(path, options = {}) {
+    options.headers = options.headers || {};
+    options.headers["Content-Type"] = "application/json";
+
+    if (csrfToken) {
+        options.headers["X-CSRF-Token"] = csrfToken;
+    }
+
+    const res = await fetch(path, options);
+    const data = await res.json();
+
+    if (!res.ok) {
+        throw new Error(data.error || "Request failed");
+    }
+
+    return data;
+}
+
+async function initAuth() {
+    const csrf = await fetch("/api/csrf").then(r => r.json());
+    csrfToken = csrf.csrfToken;
+
+    const me = await fetch("/api/me").then(r => r.json());
+
+    if (me.loggedIn) {
+        currentUser = me.user;
+    }
+}
+
 /* ========================= */
 /* NAVBAR EVENT LISTENERS */
 /* ========================= */
@@ -161,12 +192,12 @@ function showShop() {
             <div class="product">
                 <h3>Arabica Beans</h3>
                 <p>£13.99</p>
-                <button onclick="addToCart('Arabica Beans', 13.99)">Add to Cart</button>
+                <button onclick="addToCart(1,'Arabica Beans',13.99)">Add to Cart</button>
             </div>
             <div class="product">
                 <h3>Robusta Beans</h3>
                 <p>£10.99</p>
-                <button onclick="addToCart('Robusta Beans', 10.99)">Add to Cart</button>
+                <button onclick="addToCart(2,'Robusta Beans',10.99)">Add to Cart</button>
             </div>
         </div>
 
@@ -176,8 +207,14 @@ function showShop() {
     `;
 }
 
-function addToCart(name, price) {
-    cart.push({ name, price });
+function addToCart(id, name, pricePence) {
+
+    cart.push({
+        id,
+        name,
+        price: pricePence
+    });
+
     alert("Added to cart!");
 }
 
@@ -213,6 +250,13 @@ function showCart() {
 /* ========================= */
 
 function showCheckout() {
+
+    if (!currentUser) {
+        alert("You must login before checkout");
+        showLogin();
+        return;
+    }
+
     app.innerHTML = `
         <div class="card">
             <h2>Card Details</h2>
@@ -225,14 +269,72 @@ function showCheckout() {
     `;
 }
 
-function completePayment() {
-    cart = [];
-    alert("Payment Successful!");
-    showHome();
+async function showOrders() {
 
-    // Reset active navbar to Home
-    navButtons.forEach(btn => btn.classList.remove("active"));
-    document.querySelector('[data-page="home"]').classList.add("active");
+    try {
+
+        const res = await api("/api/orders");
+
+        const ordersHTML = res.orders.map(o => {
+
+            const items = o.items.map(i => `
+                <li>${i.productName} x${i.quantity}</li>
+            `).join("");
+
+            return `
+                <div class="card">
+                    <h3>Order #${o.id}</h3>
+                    <p>Status: ${o.status}</p>
+                    <ul>${items}</ul>
+                </div>
+            `;
+
+        }).join("");
+
+        app.innerHTML = `
+            <h2>My Orders</h2>
+            ${ordersHTML || "<p>No orders yet</p>"}
+        `;
+
+    } catch (err) {
+        alert(err.message);
+    }
+}
+
+async function completePayment() {
+
+    if (!currentUser) {
+        alert("Please login first");
+        showLogin();
+        return;
+    }
+
+    try {
+
+        const items = cart.map(item => ({
+            productId: item.id,
+            quantity: 1
+        }));
+
+        const res = await api("/api/checkout", {
+            method: "POST",
+            body: JSON.stringify({
+                cardNumber: "4242424242424242",
+                expiry: "12/30",
+                cvc: "123",
+                items
+            })
+        });
+
+        cart = [];
+
+        alert("Payment Successful! Order #" + res.orderId);
+
+        showHome();
+
+    } catch (err) {
+        alert(err.message);
+    }
 }
 
 /* ========================= */
@@ -240,6 +342,33 @@ function completePayment() {
 /* ========================= */
 
 function showLogin() {
+
+    if (currentUser) {
+
+        app.innerHTML = `
+            <section class="auth-section">
+                <div class="auth-card">
+
+                    <h1 class="auth-title">Account</h1>
+
+                    <p><b>Name:</b> ${currentUser.name}</p>
+                    <p><b>Email:</b> ${currentUser.email}</p>
+
+                    <button class="green-btn" onclick="showOrders()">
+                        View Orders
+                    </button>
+
+                    <button class="auth-button" onclick="logout()">
+                        Logout
+                    </button>
+
+                </div>
+            </section>
+        `;
+
+        return;
+    }
+
     app.innerHTML = `
         <section class="auth-section">
             <div class="auth-card">
@@ -250,44 +379,50 @@ function showLogin() {
                 </div>
 
                 <form class="auth-form" onsubmit="handleLogin(event)">
-                    <label class="auth-label">Email</label>
-                    <input class="auth-input" type="email" id="loginEmail" required>
+                    <label>Email</label>
+                    <input type="email" id="loginEmail" required>
 
-                    <label class="auth-label">Password</label>
-                    <input class="auth-input" type="password" id="loginPassword" required>
-
-                    <a href="#" class="auth-forgot">Forgot Password?</a>
+                    <label>Password</label>
+                    <input type="password" id="loginPassword" required>
 
                     <button type="submit" class="auth-button">
-                        SUBMIT
+                        LOGIN
                     </button>
                 </form>
 
                 <div class="auth-footer">
-                    <a href="#" class="auth-register" onclick="showRegister()">
+                    <a href="#" onclick="showRegister()">
                         Register Here
                     </a>
                 </div>
+
             </div>
         </section>
     `;
 }
 
-function handleLogin(event) {
+async function handleLogin(event) {
     event.preventDefault();
 
     const email = document.getElementById("loginEmail").value.trim();
     const password = document.getElementById("loginPassword").value.trim();
 
-    if (email === "admin@example.com" && password === "password") {
-        currentUser = email;
+    try {
+        const res = await api("/api/login", {
+            method: "POST",
+            body: JSON.stringify({ email, password })
+        });
+
+        currentUser = res.user;
+
         alert("Login successful!");
+
         showHome();
 
         navButtons.forEach(btn => btn.classList.remove("active"));
         document.querySelector('[data-page="home"]').classList.add("active");
 
-    } else {
+    } catch (err) {
         document.getElementById("loginError").style.display = "block";
     }
 }
@@ -330,10 +465,61 @@ function showRegister() {
     `;
 }
 
-function handleRegister(event) {
+/* ========================= */
+/* LOGOUT */
+/* ========================= */
+async function handleRegister(event) {
     event.preventDefault();
-    alert("Registration successful!");
-    showLogin();
+
+    const inputs = document.querySelectorAll(".auth-input");
+
+    const email = inputs[0].value.trim();
+    const name = inputs[1].value.trim();
+    const password = inputs[2].value.trim();
+    const confirm = inputs[3].value.trim();
+
+    if (password !== confirm) {
+        alert("Passwords do not match");
+        return;
+    }
+
+    try {
+        const res = await api("/api/register", {
+            method: "POST",
+            body: JSON.stringify({
+                email,
+                name,
+                password
+            })
+        });
+
+        currentUser = res.user;
+
+        alert("Account created!");
+
+        showHome();
+
+    } catch (err) {
+        alert(err.message);
+    }
+}
+async function logout() {
+
+    try {
+
+        await api("/api/logout", {
+            method: "POST"
+        });
+
+        currentUser = null;
+
+        alert("Logged out");
+
+        showHome();
+
+    } catch (err) {
+        alert(err.message);
+    }
 }
 
 /* ========================= */
@@ -389,6 +575,12 @@ function checkCookieConsent() {
 /* INITIAL LOAD */
 /* ========================= */
 
-showHome();
-document.querySelector('[data-page="home"]').classList.add("active");
-checkCookieConsent();
+async function startApp() {
+    await initAuth();
+
+    showHome();
+    document.querySelector('[data-page="home"]').classList.add("active");
+    checkCookieConsent();
+}
+
+startApp();

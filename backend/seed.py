@@ -1,6 +1,10 @@
 from models import db, Product
 
+from models import db, Product
+
 PRODUCTS = [
+
+    # Coffee Beans
     {
         "name": "Ethiopian Arabica Beans",
         "description": "Floral aroma with citrus notes. 250g whole beans.",
@@ -20,6 +24,14 @@ PRODUCTS = [
         "stock": 60,
     },
     {
+        "name": "Brazilian Santos",
+        "description": "Nutty and low acidity. Perfect everyday coffee.",
+        "price_pence": 1199,
+        "stock": 35,
+    },
+
+    # Drinks / Syrups
+    {
         "name": "Cold Brew Concentrate",
         "description": "Ready-to-drink cold brew concentrate. 500ml.",
         "price_pence": 899,
@@ -32,10 +44,44 @@ PRODUCTS = [
         "stock": 75,
     },
     {
+        "name": "Caramel Coffee Syrup",
+        "description": "Sweet caramel syrup perfect for lattes.",
+        "price_pence": 599,
+        "stock": 60,
+    },
+
+    # Equipment
+    {
         "name": "Reusable Coffee Cup",
         "description": "Eco-friendly reusable cup. 350ml.",
         "price_pence": 1499,
         "stock": 25,
+    },
+    {
+        "name": "French Press Coffee Maker",
+        "description": "Classic French press for rich full-bodied coffee.",
+        "price_pence": 2499,
+        "stock": 20,
+    },
+    {
+        "name": "Manual Coffee Grinder",
+        "description": "Adjustable burr grinder for fresh coffee.",
+        "price_pence": 2199,
+        "stock": 15,
+    },
+
+    # Hampers (high value products)
+    {
+        "name": "Coffee Starter Hamper",
+        "description": "Includes 2 coffee beans, mug, and syrup.",
+        "price_pence": 3999,
+        "stock": 10,
+    },
+    {
+        "name": "Ultimate Coffee Lovers Hamper",
+        "description": "4 specialty beans, syrup, cup, and grinder.",
+        "price_pence": 7999,
+        "stock": 8,
     },
 ]
 
