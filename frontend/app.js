@@ -6,6 +6,19 @@ let currentSlide = 0;
 
 let csrfToken = null;
 
+const loremParagraphs = [
+    "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+    "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+    "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.",
+    "Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+    "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium.",
+    "Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores."
+];
+
+function getRandomLoremParagraph() {
+    return loremParagraphs[Math.floor(Math.random() * loremParagraphs.length)];
+}
+
 /* ========================= */
 /* API HELPER */
 /* ========================= */
@@ -142,23 +155,23 @@ function showObjective() {
                 <div class="carousel-wrapper" id="carouselWrapper">
 
                     <div class="carousel-slide center">
-                        <img src="https://images.unsplash.com/photo-1495521821757-a1efb6729352?auto=format&fit=crop&w=800&q=80">
+                        <img src="https://images.unsplash.com/photo-1495521821757-a1efb6729352?auto=format&fit=crop&w=800&q=80" alt="Coffee shop storefront" onclick="selectSlide(0)">
                     </div>
 
                     <div class="carousel-slide">
-                        <img src="https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=800&q=80">
+                        <img src="https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=800&q=80" alt="Coffee brewing process" onclick="selectSlide(1)">
                     </div>
 
                     <div class="carousel-slide">
-                        <img src="https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=800&q=80">
+                        <img src="https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=800&q=80" alt="Barista team" onclick="selectSlide(2)">
                     </div>
 
                     <div class="carousel-slide">
-                        <img src="https://images.unsplash.com/photo-1470337458703-46ad1756a187?auto=format&fit=crop&w=800&q=80">
+                        <img src="https://images.unsplash.com/photo-1470337458703-46ad1756a187?auto=format&fit=crop&w=800&q=80" alt="Coffee beans and cup" onclick="selectSlide(3)">
                     </div>
 
                     <div class="carousel-slide">
-                        <img src="https://images.unsplash.com/photo-1459257868276-5e65389e2722?auto=format&fit=crop&w=800&q=80">
+                        <img src="https://images.unsplash.com/photo-1459257868276-5e65389e2722?auto=format&fit=crop&w=800&q=80" alt="Latte art pour" onclick="selectSlide(4)">
                     </div>
 
                 </div>
@@ -167,17 +180,16 @@ function showObjective() {
 
             </div>
 
-            <div class="carousel-description">
-                <p>
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-                </p>
+            <div class="carousel-description" id="carouselDescription">
+                <p>Click on any image to reveal its story...</p>
             </div>
 
         </div>
     `;
 
     currentSlide = 0;
-    setTimeout(updateCarouselPosition, 50);
+    updateCarouselPosition();
+    updateCarouselDescription();
 
 }
 
@@ -217,6 +229,23 @@ function updateCarouselPosition() {
 
 }
 
+function updateCarouselDescription() {
+    const description = document.getElementById('carouselDescription');
+    if (description) {
+        const randomParagraph = getRandomLoremParagraph();
+        description.innerHTML = `<p>${randomParagraph}</p>`;
+    }
+}
+
+function selectSlide(index) {
+    const slides = document.querySelectorAll(".carousel-slide");
+    if (!slides.length) return;
+
+    currentSlide = Math.max(0, Math.min(index, slides.length - 1));
+    updateCarouselPosition();
+    updateCarouselDescription();
+}
+
 function nextSlide() {
 
     const slides = document.querySelectorAll(".carousel-slide");
@@ -226,6 +255,7 @@ function nextSlide() {
     currentSlide = (currentSlide + 1) % slides.length;
 
     updateCarouselPosition();
+    updateCarouselDescription();
 
 }
 
@@ -238,6 +268,7 @@ function prevSlide() {
     currentSlide = (currentSlide - 1 + slides.length) % slides.length;
 
     updateCarouselPosition();
+    updateCarouselDescription();
 
 }
 
