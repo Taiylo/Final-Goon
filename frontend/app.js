@@ -558,14 +558,27 @@ function showCheckout() {
     }
 
     app.innerHTML = `
-        <div class="card">
-            <h2>Card Details</h2>
-            <input id="cardHolder" placeholder="Card Holder Name">
-            <input id="cardNumber" placeholder="Card Number" maxlength="19">
-            <input id="cardExpiry" placeholder="Expiry Date (MM/YY)" maxlength="5">
-            <input id="cardCvv" placeholder="CVV" maxlength="4">
-            <button class="green-btn" onclick="completePayment()">Pay</button>
-        </div>
+        <section class="auth-section">
+            <div class="auth-card">
+                <h1 class="auth-title">CHECKOUT</h1>
+
+                <form class="auth-form" onsubmit="completePayment(event)">
+                    <label class="auth-label" for="cardHolder">Card Holder Name</label>
+                    <input class="auth-input" id="cardHolder" type="text" placeholder="John Smith" required>
+
+                    <label class="auth-label" for="cardNumber">Card Number</label>
+                    <input class="auth-input" id="cardNumber" type="text" placeholder="1234 5678 9012 3456" maxlength="19" required>
+
+                    <label class="auth-label" for="cardExpiry">Expiry Date</label>
+                    <input class="auth-input" id="cardExpiry" type="text" placeholder="MM/YY" maxlength="5" required>
+
+                    <label class="auth-label" for="cardCvv">CVV</label>
+                    <input class="auth-input" id="cardCvv" type="text" placeholder="123" maxlength="4" required>
+
+                    <button type="submit" class="auth-button">PAY NOW</button>
+                </form>
+            </div>
+        </section>
     `;
 }
 
@@ -573,7 +586,8 @@ function showCheckout() {
 /* PAYMENT */
 /* ========================= */
 
-async function completePayment() {
+async function completePayment(event) {
+    if (event) event.preventDefault();
     if (!cart.length) return;
 
     const cardHolder = document.getElementById("cardHolder")?.value.trim();
