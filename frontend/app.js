@@ -4,6 +4,7 @@ let cart = [];
 let currentUser = null;
 let currentSlide = 0;
 let csrfToken = null;
+let objectiveParagraphs = [];
 
 const loremParagraphs = [
     "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
@@ -14,8 +15,15 @@ const loremParagraphs = [
     "Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores."
 ];
 
-function getRandomLoremParagraph() {
-    return loremParagraphs[Math.floor(Math.random() * loremParagraphs.length)];
+function getUniqueLoremParagraphs(count) {
+    const shuffled = [...loremParagraphs];
+
+    for (let i = shuffled.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+
+    return shuffled.slice(0, Math.min(count, shuffled.length));
 }
 
 /* ========================= */
@@ -135,6 +143,8 @@ function showHome() {
 /* ========================= */
 
 function showObjective() {
+    objectiveParagraphs = getUniqueLoremParagraphs(5);
+
     app.innerHTML = `
         <div class="carousel-container">
 
@@ -173,7 +183,7 @@ function showObjective() {
             </div>
 
             <div class="carousel-description">
-                <p>${getRandomLoremParagraph()}</p>
+                <p id="carouselDescriptionText">${objectiveParagraphs[0]}</p>
             </div>
 
         </div>
@@ -209,6 +219,11 @@ function updateCarouselPosition() {
     slides.forEach((slide, index) => {
         slide.classList.toggle("center", index === currentSlide);
     });
+
+    const description = document.getElementById("carouselDescriptionText");
+    if (description && objectiveParagraphs[currentSlide]) {
+        description.textContent = objectiveParagraphs[currentSlide];
+    }
 }
 
 function nextSlide() {
