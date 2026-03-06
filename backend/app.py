@@ -15,7 +15,7 @@ from models import (
 )
 
 from security import hash_password, verify_password, ensure_csrf, require_csrf
-from seed import seed_products
+from seed import seed_products, seed_lessons
 
 
 # =====================================
@@ -25,12 +25,8 @@ from seed import seed_products
 def create_app():
     app = Flask(__name__, static_folder="static", static_url_path="/static")
 
-    # ----------------------------
-    # CONFIG
-    # ----------------------------
-
     app.config.update(
-        SECRET_KEY="dev",  # CHANGE BEFORE DEPLOYMENT
+        SECRET_KEY="dev",
         SQLALCHEMY_DATABASE_URI="sqlite:///coffee_shop.db",
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
     )
@@ -40,6 +36,7 @@ def create_app():
     with app.app_context():
         db.create_all()
         seed_products()
+        seed_lessons()
 
     # =====================================
     # HELPERS
@@ -61,6 +58,15 @@ def create_app():
             abort(400, description=f"{field} must be greater than 0")
 
         return v
+
+    def parse_iso_datetime(value, field):
+        if not value:
+            abort(400, description=f"{field} is required")
+
+        try:
+            return datetime.fromisoformat(value)
+        except (TypeError, ValueError):
+            abort(400, description=f"{field} must be a valid ISO date/time")
 
     # =====================================
     # CSRF
@@ -152,13 +158,16 @@ def create_app():
 
     @app.get("/api/me")
     def me():
-
         uid = session.get("user_id")
 
         if not uid:
             return jsonify({"loggedIn": False})
 
-        user = User.query.get(uid)
+        user = db.session.get(User, uid)
+
+        if not user:
+            session.pop("user_id", None)
+            return jsonify({"loggedIn": False})
 
         return jsonify({
             "loggedIn": True,
@@ -178,17 +187,20 @@ def create_app():
         require_csrf()
         uid = require_login()
 
-        data = request.get_json()
+        data = request.get_json(silent=True) or {}
 
-        location = data.get("location")
+        location = (data.get("location") or "").strip()
         guests = parse_positive_int(data.get("guests"), "guests")
-        booking_time = data.get("bookingTime")
+        booking_time = parse_iso_datetime(data.get("bookingTime"), "bookingTime")
+
+        if not location:
+            abort(400, description="Location is required")
 
         booking = RestaurantBooking(
             user_id=uid,
             location=location,
             guests=guests,
-            booking_time=datetime.fromisoformat(booking_time)
+            booking_time=booking_time
         )
 
         db.session.add(booking)
@@ -198,10 +210,14 @@ def create_app():
 
     @app.get("/api/bookings")
     def my_bookings():
-
         uid = require_login()
 
-        bookings = RestaurantBooking.query.filter_by(user_id=uid).all()
+        bookings = (
+            RestaurantBooking.query
+            .filter_by(user_id=uid)
+            .order_by(RestaurantBooking.booking_time.asc())
+            .all()
+        )
 
         return jsonify({
             "bookings": [
@@ -221,8 +237,7 @@ def create_app():
 
     @app.get("/api/lessons")
     def list_lessons():
-
-        lessons = Lesson.query.all()
+        lessons = Lesson.query.order_by(Lesson.lesson_date.asc()).all()
 
         return jsonify({
             "lessons": [
@@ -239,15 +254,27 @@ def create_app():
 
     @app.post("/api/lessons/book")
     def book_lesson():
-
         require_csrf()
         uid = require_login()
 
-        data = request.get_json()
-
+        data = request.get_json(silent=True) or {}
         lesson_id = data.get("lessonId")
 
-        lesson = Lesson.query.get_or_404(lesson_id)
+        if not lesson_id:
+            abort(400, description="lessonId is required")
+
+        lesson = db.session.get(Lesson, lesson_id)
+
+        if not lesson:
+            abort(404, description="Lesson not found")
+
+        existing_booking = LessonBooking.query.filter_by(
+            lesson_id=lesson.id,
+            user_id=uid
+        ).first()
+
+        if existing_booking:
+            abort(409, description="You have already booked this lesson")
 
         if lesson.spaces <= 0:
             abort(409, description="Lesson is full")
@@ -270,8 +297,7 @@ def create_app():
 
     @app.get("/api/products")
     def list_products():
-
-        products = Product.query.all()
+        products = Product.query.order_by(Product.name.asc()).all()
 
         return jsonify({
             "products": [
@@ -287,44 +313,25 @@ def create_app():
         })
 
     # =====================================
-    # CHECKOUT
+    # CHECKOUT (ORDERS)
     # =====================================
 
     @app.post("/api/checkout")
     def checkout():
-
         require_csrf()
         uid = require_login()
 
         data = request.get_json(silent=True) or {}
-
-        card_number = (data.get("cardNumber") or "").strip()
-        expiry = (data.get("expiry") or "").strip()
-        cvc = (data.get("cvc") or "").strip()
-
-        if not card_number.isdigit() or len(card_number) != 16:
-            abort(400, description="Card number must be 16 digits")
-
-        if not cvc.isdigit() or len(cvc) not in (3, 4):
-            abort(400, description="Invalid CVC")
-
-        if not expiry or len(expiry) != 5 or expiry[2] != "/":
-            abort(400, description="Expiry must be in MM/YY format")
-
         items = data.get("items")
 
         if not isinstance(items, list) or not items:
             abort(400, description="Cart is empty")
 
-        collection_time = data.get("collectionTime")
-        location = data.get("location")
-
         order = Order(
             user_id=uid,
             total_price_pence=0,
             status="paid",
-            collection_time=datetime.fromisoformat(collection_time) if collection_time else None,
-            collection_location=location
+            created_at=datetime.utcnow()
         )
 
         db.session.add(order)
@@ -333,11 +340,10 @@ def create_app():
         total = 0
 
         for item in items:
-
             product_id = item.get("productId")
             quantity = parse_positive_int(item.get("quantity"), "quantity")
 
-            product = Product.query.get(product_id)
+            product = db.session.get(Product, product_id)
 
             if not product:
                 abort(404, description="Product not found")
@@ -350,12 +356,14 @@ def create_app():
             line_total = product.price_pence * quantity
             total += line_total
 
-            db.session.add(OrderItem(
+            order_item = OrderItem(
                 order_id=order.id,
                 product_id=product.id,
                 quantity=quantity,
                 price_pence=product.price_pence
-            ))
+            )
+
+            db.session.add(order_item)
 
         order.total_price_pence = total
         db.session.commit()
@@ -367,73 +375,42 @@ def create_app():
         })
 
     # =====================================
-    # HAMPERS
-    # =====================================
-
-    @app.post("/api/hampers")
-    def create_hamper():
-
-        require_csrf()
-        uid = require_login()
-
-        data = request.get_json()
-
-        items = data.get("items")
-
-        hamper = Hamper(name="Custom Hamper")
-
-        db.session.add(hamper)
-        db.session.flush()
-
-        for item in items:
-
-            product = Product.query.get(item["productId"])
-
-            db.session.add(HamperItem(
-                hamper_id=hamper.id,
-                product_id=product.id,
-                quantity=item["quantity"]
-            ))
-
-        db.session.commit()
-
-        return jsonify({
-            "ok": True,
-            "hamperId": hamper.id
-        })
-
-    # =====================================
     # ORDER HISTORY
     # =====================================
 
     @app.get("/api/orders")
-    def my_orders():
-
+    def get_orders():
         uid = require_login()
 
-        orders = Order.query \
-            .filter_by(user_id=uid) \
-            .order_by(Order.created_at.desc()) \
+        orders = (
+            Order.query
+            .filter_by(user_id=uid)
+            .order_by(Order.created_at.desc())
             .all()
+        )
+
+        orders_data = []
+
+        for order in orders:
+            items = []
+
+            for item in order.items:
+                items.append({
+                    "productName": item.product.name,
+                    "quantity": item.quantity,
+                    "pricePence": item.price_pence
+                })
+
+            orders_data.append({
+                "id": order.id,
+                "status": order.status,
+                "totalPricePence": order.total_price_pence,
+                "createdAt": order.created_at.isoformat(),
+                "items": items
+            })
 
         return jsonify({
-            "orders": [
-                {
-                    "id": o.id,
-                    "totalPricePence": o.total_price_pence,
-                    "status": o.status,
-                    "createdAt": o.created_at.isoformat(),
-                    "items": [
-                        {
-                            "productName": item.product.name,
-                            "quantity": item.quantity,
-                            "pricePence": item.price_pence
-                        }
-                        for item in o.items
-                    ]
-                }
-                for o in orders
-            ]
+            "orders": orders_data
         })
 
     # =====================================
@@ -457,7 +434,6 @@ def create_app():
     @app.errorhandler(404)
     @app.errorhandler(409)
     def api_errors(err):
-
         if not request.path.startswith("/api/"):
             return err
 
@@ -470,7 +446,6 @@ def create_app():
 
 
 app = create_app()
-
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)

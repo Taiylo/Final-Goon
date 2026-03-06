@@ -376,7 +376,7 @@ body {
 }
 
 .product {
-    background: #ffffff;
+    background: #c89269;
     padding: 30px 25px;
     border-radius: 14px;
     text-align: center;
@@ -398,7 +398,7 @@ body {
     font-size: 1.2rem;
     font-weight: bold;
     margin-bottom: 20px;
-    color: #444;
+    color: #000000;
 }
 
 .product button {
@@ -463,7 +463,7 @@ body {
     max-width: 600px;
     margin: 70px auto;
     padding: 35px;
-    background: #ffffff;
+    background: #c89269;
     border-radius: 16px;
     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
 }
@@ -666,4 +666,42 @@ body {
 .booking-item,
 .booking-item * {
     color: #000;
+}
+
+.auth-form {
+    margin-top: 10px;
+}
+
+.auth-input {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 14px;
+    border: 2px solid #2c1b14;
+    background: #d9d9d9;
+    font-size: 15px;
+    font-family: 'Teko', sans-serif;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.auth-input:focus {
+    outline: none;
+    border-color: #d06128;
+    box-shadow: 0 0 0 4px rgba(208, 97, 40, 0.18);
+    transform: translateY(-1px);
+}
+
+.auth-input::placeholder {
+    color: #666;
+}
+
+.auth-card p {
+    color: #111;
+    margin-bottom: 10px;
+}
+
+.auth-card .green-btn {
+    width: 100%;
+    margin-top: 12px;
+    border: none;
+    cursor: pointer;
 }

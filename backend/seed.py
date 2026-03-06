@@ -1,9 +1,7 @@
-from models import db, Product
-
-from models import db, Product
+from datetime import datetime, timedelta
+from models import db, Product, Lesson
 
 PRODUCTS = [
-
     # Coffee Beans
     {
         "name": "Ethiopian Arabica Beans",
@@ -70,7 +68,7 @@ PRODUCTS = [
         "stock": 15,
     },
 
-    # Hampers (high value products)
+    # Hampers
     {
         "name": "Coffee Starter Hamper",
         "description": "Includes 2 coffee beans, mug, and syrup.",
@@ -85,11 +83,32 @@ PRODUCTS = [
     },
 ]
 
+LESSONS = [
+    {
+        "title": "Espresso Basics",
+        "description": "Learn how to pull the perfect espresso shot and understand grind size, extraction, and crema.",
+        "lesson_date": datetime.utcnow() + timedelta(days=3, hours=14),
+        "spaces": 8,
+    },
+    {
+        "title": "Latte Art Workshop",
+        "description": "Practice milk steaming and create classic latte art patterns with expert guidance.",
+        "lesson_date": datetime.utcnow() + timedelta(days=7, hours=11),
+        "spaces": 6,
+    },
+    {
+        "title": "Advanced Brewing Techniques",
+        "description": "Explore brew ratios, pour-over methods, and ways to improve flavour consistency at home.",
+        "lesson_date": datetime.utcnow() + timedelta(days=12, hours=16),
+        "spaces": 10,
+    },
+]
+
 
 def seed_products():
     """Create example coffee products if the table is empty."""
     if Product.query.first():
-        return  # Prevent duplicate seeding
+        return
 
     for item in PRODUCTS:
         db.session.add(
@@ -98,6 +117,24 @@ def seed_products():
                 description=item["description"],
                 price_pence=item["price_pence"],
                 stock=item["stock"],
+            )
+        )
+
+    db.session.commit()
+
+
+def seed_lessons():
+    """Create example lessons if the table is empty."""
+    if Lesson.query.first():
+        return
+
+    for item in LESSONS:
+        db.session.add(
+            Lesson(
+                title=item["title"],
+                description=item["description"],
+                lesson_date=item["lesson_date"],
+                spaces=item["spaces"],
             )
         )
 
