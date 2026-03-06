@@ -5,6 +5,19 @@ let currentUser = null;
 let currentSlide = 0;
 let csrfToken = null;
 
+const loremParagraphs = [
+    "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+    "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+    "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.",
+    "Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+    "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium.",
+    "Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores."
+];
+
+function getRandomLoremParagraph() {
+    return loremParagraphs[Math.floor(Math.random() * loremParagraphs.length)];
+}
+
 /* ========================= */
 /* API HELPER */
 /* ========================= */
@@ -425,35 +438,28 @@ async function showShop() {
         const res = await api("/api/products");
         const products = res.products || [];
 
-        const productsHTML = products.map(product => `
+    app.innerHTML = `
+        <div class="shop-grid">
+
             <div class="product">
-                <h3>${escapeHtml(product.name)}</h3>
-                <p>£${(product.pricePence / 100).toFixed(2)}</p>
-                <button onclick="addToCart(${product.id})" ${product.stock <= 0 ? "disabled" : ""}>
-                    ${product.stock <= 0 ? "Out of Stock" : "Add to Cart"}
-                </button>
-            </div>
-        `).join("");
-
-        app.innerHTML = `
-            <div class="shop-grid">
-                ${productsHTML}
+                <h3>Arabica Beans</h3>
+                <p>£13.99</p>
+                <button onclick="addToCart(1,'Arabica Beans',13.99)">Add to Cart</button>
             </div>
 
-            <div class="shop-actions">
-                <button class="green-btn" onclick="showCart()">View Cart (${getCartItemCount()})</button>
+            <div class="product">
+                <h3>Robusta Beans</h3>
+                <p>£10.99</p>
+                <button onclick="addToCart(2,'Robusta Beans',10.99)">Add to Cart</button>
             </div>
-        `;
 
-        window.currentProducts = products;
-    } catch (err) {
-        app.innerHTML = `
-            <div class="card">
-                <h2>Error Loading Shop</h2>
-                <p>${escapeHtml(err.message)}</p>
-            </div>
-        `;
-    }
+        </div>
+
+        <div class="shop-actions">
+            <button class="green-btn" onclick="showCart()">View Cart</button>
+        </div>
+    `;
+
 }
 
 function addToCart(id) {

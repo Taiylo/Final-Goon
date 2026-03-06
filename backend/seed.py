@@ -1,5 +1,6 @@
-from datetime import datetime, timedelta
-from models import db, Product, Lesson
+from models import db, Product
+
+from models import db, Product
 
 PRODUCTS = [
     # Coffee Beans
