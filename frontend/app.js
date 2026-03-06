@@ -53,6 +53,7 @@ navButtons.forEach(button => {
         const page = this.dataset.page;
 
         if (page === "home") showHome();
+        if (page === "objective") showObjective();
         if (page === "shop") showShop();
         if (page === "locations") showLocations();
         if (page === "login") showLogin();
