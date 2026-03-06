@@ -48,6 +48,38 @@ PRODUCTS = [
         "stock": 60,
     },
 
+    # Baked Goods
+    {
+        "name": "Butter Croissant",
+        "description": "Flaky all-butter croissant, baked fresh daily.",
+        "price_pence": 325,
+        "stock": 45,
+    },
+    {
+        "name": "Pain au Chocolat",
+        "description": "Laminated pastry with rich dark chocolate filling.",
+        "price_pence": 365,
+        "stock": 36,
+    },
+    {
+        "name": "Blueberry Muffin",
+        "description": "Soft muffin packed with blueberries and a sugar crust.",
+        "price_pence": 295,
+        "stock": 40,
+    },
+    {
+        "name": "Cinnamon Roll",
+        "description": "Swirled sweet dough with cinnamon and vanilla glaze.",
+        "price_pence": 375,
+        "stock": 30,
+    },
+    {
+        "name": "Lemon Drizzle Loaf Slice",
+        "description": "Moist lemon loaf slice topped with zesty drizzle icing.",
+        "price_pence": 315,
+        "stock": 28,
+    },
+
     # Equipment
     {
         "name": "Reusable Coffee Cup",
