@@ -175,12 +175,7 @@ body {
 /* ========================= */
 
 .content {
-    background: linear-gradient(
-        90deg,
-        #7a2d2d 0%,
-        #a64635 50%,
-        #7a2d2d 100%
-    );
+    background: transparent;
 
     padding: 60px 120px;
     display: grid;
