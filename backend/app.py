@@ -1,5 +1,19 @@
+from datetime import datetime
 from flask import Flask, jsonify, request, session, send_from_directory, abort
-from models import db, User, Product, Order, OrderItem
+
+from models import (
+    db,
+    User,
+    Product,
+    Order,
+    OrderItem,
+    RestaurantBooking,
+    Lesson,
+    LessonBooking,
+    Hamper,
+    HamperItem
+)
+
 from security import hash_password, verify_password, ensure_csrf, require_csrf
 from seed import seed_products
 
@@ -14,6 +28,7 @@ def create_app():
     # ----------------------------
     # CONFIG
     # ----------------------------
+
     app.config.update(
         SECRET_KEY="dev",  # CHANGE BEFORE DEPLOYMENT
         SQLALCHEMY_DATABASE_URI="sqlite:///coffee_shop.db",
@@ -41,8 +56,10 @@ def create_app():
             v = int(value)
         except (TypeError, ValueError):
             abort(400, description=f"{field} must be an integer")
+
         if v <= 0:
             abort(400, description=f"{field} must be greater than 0")
+
         return v
 
     # =====================================
@@ -105,12 +122,14 @@ def create_app():
     @app.post("/api/login")
     def login():
         require_csrf()
+
         data = request.get_json(silent=True) or {}
 
         email = (data.get("email") or "").strip().lower()
         password = data.get("password") or ""
 
         user = User.query.filter_by(email=email).first()
+
         if not user or not verify_password(user.password_hash, password):
             abort(401, description="Invalid email or password")
 
@@ -133,7 +152,9 @@ def create_app():
 
     @app.get("/api/me")
     def me():
+
         uid = session.get("user_id")
+
         if not uid:
             return jsonify({"loggedIn": False})
 
@@ -149,11 +170,107 @@ def create_app():
         })
 
     # =====================================
+    # RESTAURANT BOOKINGS
+    # =====================================
+
+    @app.post("/api/bookings")
+    def create_booking():
+        require_csrf()
+        uid = require_login()
+
+        data = request.get_json()
+
+        location = data.get("location")
+        guests = parse_positive_int(data.get("guests"), "guests")
+        booking_time = data.get("bookingTime")
+
+        booking = RestaurantBooking(
+            user_id=uid,
+            location=location,
+            guests=guests,
+            booking_time=datetime.fromisoformat(booking_time)
+        )
+
+        db.session.add(booking)
+        db.session.commit()
+
+        return jsonify({"ok": True})
+
+    @app.get("/api/bookings")
+    def my_bookings():
+
+        uid = require_login()
+
+        bookings = RestaurantBooking.query.filter_by(user_id=uid).all()
+
+        return jsonify({
+            "bookings": [
+                {
+                    "id": b.id,
+                    "location": b.location,
+                    "guests": b.guests,
+                    "bookingTime": b.booking_time.isoformat()
+                }
+                for b in bookings
+            ]
+        })
+
+    # =====================================
+    # LESSONS
+    # =====================================
+
+    @app.get("/api/lessons")
+    def list_lessons():
+
+        lessons = Lesson.query.all()
+
+        return jsonify({
+            "lessons": [
+                {
+                    "id": l.id,
+                    "title": l.title,
+                    "description": l.description,
+                    "date": l.lesson_date.isoformat(),
+                    "spaces": l.spaces
+                }
+                for l in lessons
+            ]
+        })
+
+    @app.post("/api/lessons/book")
+    def book_lesson():
+
+        require_csrf()
+        uid = require_login()
+
+        data = request.get_json()
+
+        lesson_id = data.get("lessonId")
+
+        lesson = Lesson.query.get_or_404(lesson_id)
+
+        if lesson.spaces <= 0:
+            abort(409, description="Lesson is full")
+
+        lesson.spaces -= 1
+
+        booking = LessonBooking(
+            lesson_id=lesson.id,
+            user_id=uid
+        )
+
+        db.session.add(booking)
+        db.session.commit()
+
+        return jsonify({"ok": True})
+
+    # =====================================
     # PRODUCTS
     # =====================================
 
     @app.get("/api/products")
     def list_products():
+
         products = Product.query.all()
 
         return jsonify({
@@ -170,17 +287,17 @@ def create_app():
         })
 
     # =====================================
-    # CHECKOUT (LOGIN REQUIRED)
+    # CHECKOUT
     # =====================================
 
     @app.post("/api/checkout")
     def checkout():
+
         require_csrf()
         uid = require_login()
 
         data = request.get_json(silent=True) or {}
 
-        # ---- Validate card details ----
         card_number = (data.get("cardNumber") or "").strip()
         expiry = (data.get("expiry") or "").strip()
         cvc = (data.get("cvc") or "").strip()
@@ -194,22 +311,34 @@ def create_app():
         if not expiry or len(expiry) != 5 or expiry[2] != "/":
             abort(400, description="Expiry must be in MM/YY format")
 
-        # ---- Validate cart ----
         items = data.get("items")
+
         if not isinstance(items, list) or not items:
             abort(400, description="Cart is empty")
 
-        order = Order(user_id=uid, total_price_pence=0, status="paid")
+        collection_time = data.get("collectionTime")
+        location = data.get("location")
+
+        order = Order(
+            user_id=uid,
+            total_price_pence=0,
+            status="paid",
+            collection_time=datetime.fromisoformat(collection_time) if collection_time else None,
+            collection_location=location
+        )
+
         db.session.add(order)
         db.session.flush()
 
         total = 0
 
         for item in items:
+
             product_id = item.get("productId")
             quantity = parse_positive_int(item.get("quantity"), "quantity")
 
             product = Product.query.get(product_id)
+
             if not product:
                 abort(404, description="Product not found")
 
@@ -238,11 +367,48 @@ def create_app():
         })
 
     # =====================================
-    # MY ORDERS (Purchase History)
+    # HAMPERS
+    # =====================================
+
+    @app.post("/api/hampers")
+    def create_hamper():
+
+        require_csrf()
+        uid = require_login()
+
+        data = request.get_json()
+
+        items = data.get("items")
+
+        hamper = Hamper(name="Custom Hamper")
+
+        db.session.add(hamper)
+        db.session.flush()
+
+        for item in items:
+
+            product = Product.query.get(item["productId"])
+
+            db.session.add(HamperItem(
+                hamper_id=hamper.id,
+                product_id=product.id,
+                quantity=item["quantity"]
+            ))
+
+        db.session.commit()
+
+        return jsonify({
+            "ok": True,
+            "hamperId": hamper.id
+        })
+
+    # =====================================
+    # ORDER HISTORY
     # =====================================
 
     @app.get("/api/orders")
     def my_orders():
+
         uid = require_login()
 
         orders = Order.query \
@@ -291,8 +457,10 @@ def create_app():
     @app.errorhandler(404)
     @app.errorhandler(409)
     def api_errors(err):
+
         if not request.path.startswith("/api/"):
             return err
+
         return jsonify({
             "ok": False,
             "error": getattr(err, "description", "Request failed")
@@ -302,6 +470,7 @@ def create_app():
 
 
 app = create_app()
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
