@@ -2,7 +2,6 @@ from datetime import datetime, timedelta
 from models import db, Product, Lesson
 
 PRODUCTS = [
-    # Coffee Beans
     {
         "name": "Ethiopian Arabica Beans",
         "description": "Floral aroma with citrus notes. 250g whole beans.",
@@ -27,8 +26,6 @@ PRODUCTS = [
         "price_pence": 1199,
         "stock": 35,
     },
-
-    # Drinks / Syrups
     {
         "name": "Cold Brew Concentrate",
         "description": "Ready-to-drink cold brew concentrate. 500ml.",
@@ -99,8 +96,6 @@ PRODUCTS = [
         "price_pence": 2199,
         "stock": 15,
     },
-
-    # Hampers
     {
         "name": "Coffee Starter Hamper",
         "description": "Includes 2 coffee beans, mug, and syrup.",
@@ -112,6 +107,38 @@ PRODUCTS = [
         "description": "4 specialty beans, syrup, cup, and grinder.",
         "price_pence": 7999,
         "stock": 8,
+    },
+
+    # Bakery Items
+    {
+        "name": "Butter Croissant",
+        "description": "Flaky all-butter croissant, baked fresh daily.",
+        "price_pence": 325,
+        "stock": 45,
+    },
+    {
+        "name": "Pain au Chocolat",
+        "description": "Laminated pastry with rich dark chocolate filling.",
+        "price_pence": 365,
+        "stock": 36,
+    },
+    {
+        "name": "Blueberry Muffin",
+        "description": "Soft muffin packed with blueberries and a sugar crust.",
+        "price_pence": 295,
+        "stock": 40,
+    },
+    {
+        "name": "Cinnamon Roll",
+        "description": "Swirled sweet dough with cinnamon and vanilla glaze.",
+        "price_pence": 375,
+        "stock": 30,
+    },
+    {
+        "name": "Lemon Drizzle Loaf Slice",
+        "description": "Moist lemon loaf slice topped with zesty drizzle icing.",
+        "price_pence": 315,
+        "stock": 28,
     },
 ]
 
@@ -138,36 +165,72 @@ LESSONS = [
 
 
 def seed_products():
-    """Create example coffee products if the table is empty."""
-    if Product.query.first():
-        return
+    """
+    Sync products table with PRODUCTS list.
+    - Adds new products
+    - Updates existing products
+    - Optionally removes products no longer in PRODUCTS
+    """
+    existing_products = {product.name: product for product in Product.query.all()}
+    seed_names = set()
 
     for item in PRODUCTS:
-        db.session.add(
-            Product(
-                name=item["name"],
-                description=item["description"],
-                price_pence=item["price_pence"],
-                stock=item["stock"],
+        seed_names.add(item["name"])
+
+        existing = existing_products.get(item["name"])
+
+        if existing:
+            existing.description = item["description"]
+            existing.price_pence = item["price_pence"]
+            existing.stock = item["stock"]
+        else:
+            db.session.add(
+                Product(
+                    name=item["name"],
+                    description=item["description"],
+                    price_pence=item["price_pence"],
+                    stock=item["stock"],
+                )
             )
-        )
+
+    # Optional: remove products that were deleted from PRODUCTS
+    for product in Product.query.all():
+        if product.name not in seed_names:
+            db.session.delete(product)
 
     db.session.commit()
 
 
 def seed_lessons():
-    """Create example lessons if the table is empty."""
-    if Lesson.query.first():
-        return
+    """
+    Sync lessons table with LESSONS list.
+    Uses title as the unique identifier.
+    """
+    existing_lessons = {lesson.title: lesson for lesson in Lesson.query.all()}
+    seed_titles = set()
 
     for item in LESSONS:
-        db.session.add(
-            Lesson(
-                title=item["title"],
-                description=item["description"],
-                lesson_date=item["lesson_date"],
-                spaces=item["spaces"],
+        seed_titles.add(item["title"])
+
+        existing = existing_lessons.get(item["title"])
+
+        if existing:
+            existing.description = item["description"]
+            existing.lesson_date = item["lesson_date"]
+            existing.spaces = item["spaces"]
+        else:
+            db.session.add(
+                Lesson(
+                    title=item["title"],
+                    description=item["description"],
+                    lesson_date=item["lesson_date"],
+                    spaces=item["spaces"],
+                )
             )
-        )
+
+    # Optional: remove lessons that were deleted from LESSONS
+    for lesson in Lesson.query.all():
+        if lesson.title not in seed_titles:
+            db.session.delete(lesson)
 
     db.session.commit()
