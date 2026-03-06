@@ -572,3 +572,103 @@ body {
     }
 }
 
+/* ========================= */
+/* BOOKINGS (RESTAURANT + LESSONS) */
+/* ========================= */
+
+.booking-card {
+    max-width: 600px;
+    margin: 60px auto;
+    padding: 40px;
+    background: #ffffff;
+    border-radius: 18px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+}
+
+.booking-card h2 {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.booking-form label {
+    display: block;
+    font-size: 1rem;
+    margin-top: 15px;
+    margin-bottom: 5px;
+    color: #333;
+}
+
+.booking-form input,
+.booking-form select {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: 2px solid #ccc;
+    font-size: 0.95rem;
+}
+
+.booking-form input:focus,
+.booking-form select:focus {
+    border-color: #d06128;
+    outline: none;
+}
+
+.booking-form button {
+    margin-top: 25px;
+    width: 100%;
+}
+
+/* ========================= */
+/* ACCOUNT BOOKINGS */
+/* ========================= */
+
+.account-section {
+    max-width: 900px;
+    margin: 60px auto;
+}
+
+.account-title {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.booking-history {
+    display: grid;
+    gap: 20px;
+}
+
+.booking-item {
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 14px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    border-left: 6px solid #d06128;
+}
+
+.booking-item h4 {
+    margin-bottom: 8px;
+}
+
+.booking-item p {
+    margin: 4px 0;
+    font-size: 0.95rem;
+}
+
+/* ========================= */
+/* FORCE BLACK TEXT FOR BOOKINGS */
+/* ========================= */
+
+.booking-card,
+.booking-card * {
+    color: #000;
+}
+
+.account-section,
+.account-section * {
+    color: #000;
+}
+
+.booking-item,
+.booking-item * {
+    color: #000;
+}

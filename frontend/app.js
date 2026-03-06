@@ -277,27 +277,28 @@ function showRestaurant() {
     `;
 }
 
+
 function bookTable(event) {
 
     event.preventDefault();
 
     const booking = {
-
+        type: "Restaurant",
         name: document.getElementById("restName").value,
-        email: document.getElementById("restEmail").value,
         date: document.getElementById("restDate").value,
         time: document.getElementById("restTime").value,
         guests: document.getElementById("restGuests").value
-
     };
 
-    localStorage.setItem("restaurantBooking", JSON.stringify(booking));
+    const bookings = JSON.parse(localStorage.getItem("bookings") || "[]");
+    bookings.push(booking);
+    localStorage.setItem("bookings", JSON.stringify(bookings));
 
     alert("Table booked successfully!");
 
     showHome();
-
 }
+
 /* ========================= */
 /* COFFEE LESSONS */
 /* ========================= */
@@ -343,21 +344,20 @@ function bookLesson(event) {
     event.preventDefault();
 
     const lesson = {
-
-        name: document.getElementById("lessonName").value,
-        email: document.getElementById("lessonEmail").value,
-        type: document.getElementById("lessonType").value,
+        type: "Lesson",
+        lessonType: document.getElementById("lessonType").value,
         date: document.getElementById("lessonDate").value
-
     };
 
-    localStorage.setItem("lessonBooking", JSON.stringify(lesson));
+    const bookings = JSON.parse(localStorage.getItem("bookings") || "[]");
+    bookings.push(lesson);
+    localStorage.setItem("bookings", JSON.stringify(bookings));
 
     alert("Lesson booked successfully!");
 
     showHome();
-
 }
+
 
 /* ========================= */
 /* SHOP */
@@ -513,6 +513,47 @@ async function completePayment() {
 /* ========================= */
 /* LOGIN */
 /* ========================= */
+function showBookings() {
+
+    const bookings = JSON.parse(localStorage.getItem("bookings") || "[]");
+
+    const html = bookings.map(b => {
+
+        if (b.type === "Restaurant") {
+            return `
+                <div class="booking-item">
+                    <h4>Restaurant Booking</h4>
+                    <p>Date: ${b.date}</p>
+                    <p>Time: ${b.time}</p>
+                    <p>Guests: ${b.guests}</p>
+                </div>
+            `;
+        }
+
+        if (b.type === "Lesson") {
+            return `
+                <div class="booking-item">
+                    <h4>Coffee Lesson</h4>
+                    <p>Lesson: ${b.lessonType}</p>
+                    <p>Date: ${b.date}</p>
+                </div>
+            `;
+        }
+
+    }).join("");
+
+    app.innerHTML = `
+        <div class="account-section">
+
+            <h2 class="account-title">My Bookings</h2>
+
+            <div class="booking-history">
+                ${html || "<p>No bookings yet</p>"}
+            </div>
+
+        </div>
+    `;
+}
 
 function showLogin() {
 
@@ -528,7 +569,13 @@ function showLogin() {
                     <p><b>Name:</b> ${currentUser.name}</p>
                     <p><b>Email:</b> ${currentUser.email}</p>
 
-                    <button class="green-btn" onclick="showOrders()">View Orders</button>
+                    <button class="green-btn" onclick="showOrders()">
+                        View Orders
+                    </button>
+
+                    <button class="green-btn" onclick="showBookings()">
+                        My Bookings
+                    </button>
 
                     <button class="auth-button" onclick="logout()">Logout</button>
 
@@ -573,6 +620,7 @@ function showLogin() {
         </section>
     `;
 }
+
 
 async function handleLogin(event) {
 
