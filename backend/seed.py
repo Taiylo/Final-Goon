@@ -1,7 +1,5 @@
 from models import db, Product
 
-from models import db, Product
-
 PRODUCTS = [
 
     # Coffee Beans

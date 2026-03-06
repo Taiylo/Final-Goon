@@ -394,29 +394,42 @@ function bookLesson(event) {
 /* SHOP */
 /* ========================= */
 
-function showShop() {
+async function showShop() {
 
     app.innerHTML = `
-        <div class="shop-grid">
-
-            <div class="product">
-                <h3>Arabica Beans</h3>
-                <p>£13.99</p>
-                <button onclick="addToCart(1,'Arabica Beans',13.99)">Add to Cart</button>
+        <div class="shop-container">
+            <h2>Our Coffee Shop</h2>
+            <div class="shop-grid" id="shopGrid">
+                <p>Loading products...</p>
             </div>
 
-            <div class="product">
-                <h3>Robusta Beans</h3>
-                <p>£10.99</p>
-                <button onclick="addToCart(2,'Robusta Beans',10.99)">Add to Cart</button>
+            <div class="shop-actions">
+                <button class="green-btn" onclick="showCart()">View Cart</button>
             </div>
-
-        </div>
-
-        <div class="shop-actions">
-            <button class="green-btn" onclick="showCart()">View Cart</button>
         </div>
     `;
+
+    try {
+        const data = await api("/api/products");
+        const grid = document.getElementById("shopGrid");
+
+        if (data.products && data.products.length > 0) {
+            grid.innerHTML = data.products.map(p => `
+                <div class="product">
+                    <h3>${p.name}</h3>
+                    <p class="product-desc">${p.description || ""}</p>
+                    <p class="product-price">£${(p.pricePence / 100).toFixed(2)}</p>
+                    <p class="product-stock">Stock: ${p.stock}</p>
+                    <button class="add-btn" onclick="addToCart(${p.id},'${p.name}',${p.pricePence / 100})">Add to Cart</button>
+                </div>
+            `).join("");
+        } else {
+            grid.innerHTML = "<p>No products available</p>";
+        }
+    } catch (err) {
+        console.error("Failed to load products", err);
+        document.getElementById("shopGrid").innerHTML = "<p>Error loading products</p>";
+    }
 
 }
 
