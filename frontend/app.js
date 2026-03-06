@@ -15,6 +15,21 @@ const loremParagraphs = [
     "Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores."
 ];
 
+const HARDCODED_PRODUCTS = [
+    { id: 1, name: "Ethiopian Arabica Beans", description: "Floral aroma with citrus notes. 250g whole beans.", pricePence: 1399, stock: 50 },
+    { id: 2, name: "Colombian Supremo", description: "Rich and smooth with chocolate undertones. 250g.", pricePence: 1299, stock: 40 },
+    { id: 3, name: "Italian Espresso Blend", description: "Dark roast espresso blend. Strong and bold.", pricePence: 1099, stock: 60 },
+    { id: 4, name: "Brazilian Santos", description: "Nutty and low acidity. Perfect everyday coffee.", pricePence: 1199, stock: 35 },
+    { id: 5, name: "Cold Brew Concentrate", description: "Ready-to-drink cold brew concentrate. 500ml.", pricePence: 899, stock: 30 },
+    { id: 6, name: "Vanilla Latte Syrup", description: "Premium vanilla syrup for lattes and desserts.", pricePence: 599, stock: 75 },
+    { id: 7, name: "Caramel Coffee Syrup", description: "Sweet caramel syrup perfect for lattes.", pricePence: 599, stock: 60 },
+    { id: 8, name: "Reusable Coffee Cup", description: "Eco-friendly reusable cup. 350ml.", pricePence: 1499, stock: 25 },
+    { id: 9, name: "French Press Coffee Maker", description: "Classic French press for rich full-bodied coffee.", pricePence: 2499, stock: 20 },
+    { id: 10, name: "Manual Coffee Grinder", description: "Adjustable burr grinder for fresh coffee.", pricePence: 2199, stock: 15 },
+    { id: 11, name: "Coffee Starter Hamper", description: "Includes 2 coffee beans, mug, and syrup.", pricePence: 3999, stock: 10 },
+    { id: 12, name: "Ultimate Coffee Lovers Hamper", description: "4 specialty beans, syrup, cup, and grinder.", pricePence: 7999, stock: 8 },
+];
+
 function getRandomLoremParagraph() {
     return loremParagraphs[Math.floor(Math.random() * loremParagraphs.length)];
 }
@@ -394,13 +409,11 @@ function bookLesson(event) {
 /* SHOP */
 /* ========================= */
 
-async function showShop() {
+function showShop() {
 
     app.innerHTML = `
         <div class="shop-container">
-            <h2>Our Coffee Shop</h2>
             <div class="shop-grid" id="shopGrid">
-                <p>Loading products...</p>
             </div>
 
             <div class="shop-actions">
@@ -409,27 +422,17 @@ async function showShop() {
         </div>
     `;
 
-    try {
-        const data = await api("/api/products");
-        const grid = document.getElementById("shopGrid");
-
-        if (data.products && data.products.length > 0) {
-            grid.innerHTML = data.products.map(p => `
-                <div class="product">
-                    <h3>${p.name}</h3>
-                    <p class="product-desc">${p.description || ""}</p>
-                    <p class="product-price">£${(p.pricePence / 100).toFixed(2)}</p>
-                    <p class="product-stock">Stock: ${p.stock}</p>
-                    <button class="add-btn" onclick="addToCart(${p.id},'${p.name}',${p.pricePence / 100})">Add to Cart</button>
-                </div>
-            `).join("");
-        } else {
-            grid.innerHTML = "<p>No products available</p>";
-        }
-    } catch (err) {
-        console.error("Failed to load products", err);
-        document.getElementById("shopGrid").innerHTML = "<p>Error loading products</p>";
-    }
+    const grid = document.getElementById("shopGrid");
+    
+    grid.innerHTML = HARDCODED_PRODUCTS.map(p => `
+        <div class="product">
+            <h3>${p.name}</h3>
+            <p class="product-desc">${p.description}</p>
+            <p class="product-price">£${(p.pricePence / 100).toFixed(2)}</p>
+            <p class="product-stock">Stock: ${p.stock}</p>
+            <button class="add-btn" onclick="addToCart(${p.id},'${p.name}',${p.pricePence / 100})">Add to Cart</button>
+        </div>
+    `).join("");
 
 }
 
