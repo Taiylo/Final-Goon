@@ -173,9 +173,7 @@ function showObjective() {
             </div>
 
             <div class="carousel-description">
-                <p>
-                    We are passionate about traditional coffee, premium beans, and creating memorable experiences for every customer.
-                </p>
+                <p>${getRandomLoremParagraph()}</p>
             </div>
 
         </div>
@@ -438,28 +436,35 @@ async function showShop() {
         const res = await api("/api/products");
         const products = res.products || [];
 
-    app.innerHTML = `
-        <div class="shop-grid">
+        window.currentProducts = products;
 
+        const productsHTML = products.map(product => `
             <div class="product">
-                <h3>Arabica Beans</h3>
-                <p>£13.99</p>
-                <button onclick="addToCart(1,'Arabica Beans',13.99)">Add to Cart</button>
+                <h3>${escapeHtml(product.name)}</h3>
+                <p>£${(product.pricePence / 100).toFixed(2)}</p>
+                <button onclick="addToCart(${product.id})" ${product.stock <= 0 ? "disabled" : ""}>
+                    ${product.stock <= 0 ? "Out of Stock" : "Add to Cart"}
+                </button>
+            </div>
+        `).join("");
+
+        app.innerHTML = `
+            <div class="shop-grid">
+                ${productsHTML}
             </div>
 
-            <div class="product">
-                <h3>Robusta Beans</h3>
-                <p>£10.99</p>
-                <button onclick="addToCart(2,'Robusta Beans',10.99)">Add to Cart</button>
+            <div class="shop-actions">
+                <button class="green-btn" onclick="showCart()">View Cart (${getCartItemCount()})</button>
             </div>
-
-        </div>
-
-        <div class="shop-actions">
-            <button class="green-btn" onclick="showCart()">View Cart</button>
-        </div>
-    `;
-
+        `;
+    } catch (err) {
+        app.innerHTML = `
+            <div class="card">
+                <h2>Error Loading Shop</h2>
+                <p>${escapeHtml(err.message)}</p>
+            </div>
+        `;
+    }
 }
 
 function addToCart(id) {
@@ -778,6 +783,7 @@ function showRegister() {
         </section>
     `;
 }
+
 async function handleRegister(event) {
     event.preventDefault();
 
