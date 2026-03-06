@@ -705,3 +705,34 @@ body {
     border: none;
     cursor: pointer;
 }
+
+.auth-form {
+    margin-top: 10px;
+}
+
+.auth-input {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 14px;
+    border: 2px solid #2c1b14;
+    background: #d9d9d9;
+    font-size: 15px;
+    font-family: 'Teko', sans-serif;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.auth-input:focus {
+    outline: none;
+    border-color: #d06128;
+    box-shadow: 0 0 0 4px rgba(208, 97, 40, 0.18);
+    transform: translateY(-1px);
+}
+
+.auth-input::placeholder {
+    color: #666;
+}
+
+.auth-form .auth-button {
+    width: 100%;
+    margin-top: 20px;
+}
